@@ -1,0 +1,39 @@
+run_mode:
+  name: Run mode
+  description: Start executing a configured room mode.
+  fields:
+    mode:
+      required: true
+      example: sample_parallel_mode
+      selector:
+        text:
+
+run_action:
+  name: Run action
+  description: Run one room mode step or target, including its dependencies.
+  fields:
+    mode:
+      required: true
+      example: sample_parallel_mode
+      selector:
+        text:
+    step:
+      required: true
+      example: enable_demo_flags
+      selector:
+        text:
+    target_entity_id:
+      required: false
+      example: input_boolean.room_mode_demo_flag_a
+      selector:
+        entity:
+
+reset_mode:
+  name: Reset mode
+  description: Reset a room mode sensor back to idle.
+  fields:
+    mode:
+      required: true
+      example: sample_parallel_mode
+      selector:
+        text:
