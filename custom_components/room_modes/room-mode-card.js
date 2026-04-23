@@ -39,6 +39,9 @@ class RoomModeCard extends HTMLElement {
               </div>
             </div>
             <div class="room-mode-header-actions">
+              <button class="help-button icon-button" type="button" aria-label="Show documentation" hidden>
+                <ha-icon icon="mdi:help-circle-outline"></ha-icon>
+              </button>
               <button class="drawer-button icon-button" type="button" aria-label="Show action details">
                 <ha-icon icon="mdi:chevron-down"></ha-icon>
               </button>
@@ -48,10 +51,20 @@ class RoomModeCard extends HTMLElement {
             <div class="room-mode-hero-icon-wrap">
               <ha-icon class="room-mode-hero-icon"></ha-icon>
             </div>
+            <div class="room-mode-controls"></div>
           </div>
           <div class="room-mode-action-strip"></div>
           <div class="room-mode-drawer" hidden></div>
         </div>
+        <dialog class="room-mode-help-dialog">
+          <div class="help-dialog-header">
+            <span class="help-dialog-title"></span>
+            <button class="help-dialog-close icon-button" type="button" aria-label="Close">
+              <ha-icon icon="mdi:close"></ha-icon>
+            </button>
+          </div>
+          <div class="help-dialog-body"></div>
+        </dialog>
       </ha-card>
     `;
 
@@ -61,9 +74,32 @@ class RoomModeCard extends HTMLElement {
     this._heroIcon = this.querySelector(".room-mode-hero-icon");
     this._drawerButton = this.querySelector(".drawer-button");
     this._actionStrip = this.querySelector(".room-mode-action-strip");
+    this._controls = this.querySelector(".room-mode-controls");
     this._drawer = this.querySelector(".room-mode-drawer");
+    this._helpButton = this.querySelector(".help-button");
+    this._helpDialog = this.querySelector(".room-mode-help-dialog");
+    this._helpDialogTitle = this.querySelector(".help-dialog-title");
+    this._helpDialogBody = this.querySelector(".help-dialog-body");
 
     this._card.addEventListener("click", (event) => {
+      if (event.target.closest(".room-mode-help-dialog")) {
+        return;
+      }
+
+      const helpButton = event.target.closest(".help-button");
+      if (helpButton) {
+        event.stopPropagation();
+        this._openHelp();
+        return;
+      }
+
+      const controlButton = event.target.closest("[data-control-index]");
+      if (controlButton) {
+        event.stopPropagation();
+        this._handleControl(controlButton);
+        return;
+      }
+
       const actionButton = event.target.closest("[data-action-type]");
       if (actionButton) {
         event.stopPropagation();
@@ -80,6 +116,16 @@ class RoomModeCard extends HTMLElement {
       }
 
       this._handleRun();
+    });
+
+    this._helpDialog.addEventListener("click", (event) => {
+      if (event.target.closest(".help-dialog-close")) {
+        this._helpDialog.close();
+        return;
+      }
+      if (event.target === this._helpDialog) {
+        this._helpDialog.close();
+      }
     });
 
     this._card.addEventListener("keydown", (event) => {
@@ -160,6 +206,7 @@ class RoomModeCard extends HTMLElement {
         justify-content: center;
         align-items: center;
         min-height: 118px;
+        position: relative;
       }
       .room-mode-hero-icon-wrap {
         width: 104px;
@@ -312,6 +359,179 @@ class RoomModeCard extends HTMLElement {
         background: rgba(211, 47, 47, 0.18);
         border-color: rgba(255, 177, 177, 0.2);
       }
+      .room-mode-controls {
+        position: absolute;
+        right: 0;
+        left: calc(50% + 52px);
+        top: 0;
+        bottom: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        justify-content: center;
+        align-items: center;
+        pointer-events: none;
+      }
+      .room-mode-controls:empty {
+        display: none;
+      }
+      .control-button {
+        pointer-events: auto;
+      }
+      .control-button {
+        height: 40px;
+        min-width: 40px;
+        padding: 0 14px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 999px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        background: rgba(255, 255, 255, 0.08);
+        color: rgba(235, 237, 242, 0.85);
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .control-button:active {
+        background: rgba(255, 255, 255, 0.18);
+      }
+      .help-button[hidden] {
+        display: none;
+      }
+      .room-mode-help-dialog {
+        max-width: none;
+        width: calc(100vw - 48px);
+        max-height: calc(100vh - 48px);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 20px;
+        background: rgba(24, 26, 32, 0.98);
+        color: rgba(235, 237, 242, 0.92);
+        padding: 0;
+        box-shadow: 0 24px 48px rgba(0, 0, 0, 0.5);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+      .room-mode-help-dialog:not([open]) {
+        display: none;
+      }
+      .room-mode-help-dialog::backdrop {
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
+      }
+      .room-mode-help-dialog[open] {
+        animation: help-dialog-in 200ms ease;
+      }
+      @keyframes help-dialog-in {
+        from { opacity: 0; transform: scale(0.95) translateY(8px); }
+        to { opacity: 1; transform: scale(1) translateY(0); }
+      }
+      .help-dialog-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 16px 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        flex-shrink: 0;
+      }
+      .help-dialog-title {
+        font-size: 22px;
+        font-weight: 700;
+        line-height: 1.2;
+      }
+      .help-dialog-close {
+        flex-shrink: 0;
+      }
+      .help-dialog-body {
+        padding: 16px;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+      }
+      .help-dialog-body h1 {
+        font-size: 26px;
+        font-weight: 700;
+        margin: 16px 0 8px;
+        color: rgba(255, 255, 255, 0.95);
+      }
+      .help-dialog-body h1:first-child {
+        margin-top: 0;
+      }
+      .help-dialog-body h2 {
+        font-size: 22px;
+        font-weight: 700;
+        margin: 14px 0 6px;
+        color: rgba(255, 255, 255, 0.92);
+      }
+      .help-dialog-body h2:first-child {
+        margin-top: 0;
+      }
+      .help-dialog-body h3 {
+        font-size: 19px;
+        font-weight: 600;
+        margin: 12px 0 4px;
+        color: rgba(255, 255, 255, 0.88);
+      }
+      .help-dialog-body p {
+        margin: 0 0 14px;
+        line-height: 1.6;
+        font-size: 18px;
+        color: rgba(235, 237, 242, 0.82);
+      }
+      .help-dialog-body figure {
+        margin: 12px 0;
+      }
+      .help-dialog-body img {
+        max-width: 100%;
+        border-radius: 12px;
+        display: block;
+      }
+      .help-dialog-body figcaption {
+        font-size: 15px;
+        color: rgba(235, 237, 242, 0.55);
+        margin-top: 6px;
+        text-align: center;
+      }
+      .help-dialog-body ul {
+        margin: 0 0 14px;
+        padding-left: 24px;
+        font-size: 18px;
+        line-height: 1.6;
+        color: rgba(235, 237, 242, 0.82);
+      }
+      .help-dialog-body li {
+        margin-bottom: 4px;
+      }
+      .help-dialog-body a {
+        color: #a5a0ff;
+        text-decoration: none;
+      }
+      .help-dialog-body a:hover {
+        text-decoration: underline;
+      }
+      .help-dialog-body strong {
+        font-weight: 700;
+        color: rgba(255, 255, 255, 0.95);
+      }
+      .help-columns {
+        display: flex;
+        gap: 20px;
+        align-items: start;
+        margin-bottom: 14px;
+      }
+      .help-columns-text {
+        flex: 1;
+        min-width: 0;
+      }
+      .help-columns-media {
+        flex: 1;
+        min-width: 0;
+      }
+      .help-columns-media img {
+        width: 100%;
+      }
       @keyframes room-mode-spin {
         from { transform: rotate(0deg); }
         to { transform: rotate(360deg); }
@@ -348,9 +568,11 @@ class RoomModeCard extends HTMLElement {
     this._heroIcon.setAttribute("icon", this._config.icon || attrs.icon || "mdi:button-cursor");
     this._actionStrip.innerHTML = this._renderActionStrip(steps, running);
 
+    this._controls.innerHTML = this._renderControls();
     this._drawer.hidden = !this._drawerOpen;
     this._drawer.innerHTML = this._drawerOpen ? steps.map((step) => this._renderStep(step, running)).join("") : "";
     this._drawerButton.classList.toggle("open", this._drawerOpen);
+    this._helpButton.hidden = !this._config.documentation;
   }
 
   _renderStep(step, running) {
@@ -418,6 +640,118 @@ class RoomModeCard extends HTMLElement {
     }
     const initial = (label || "?").trim().charAt(0).toUpperCase();
     return `<span class="action-initial">${initial}</span>`;
+  }
+
+  _renderControls() {
+    const buttons = this._config.buttons;
+    if (!Array.isArray(buttons) || !buttons.length) return "";
+    return buttons
+      .map(
+        (btn, i) => `
+      <button class="control-button" type="button" title="${btn.label || ""}" aria-label="${btn.label || ""}" data-control-index="${i}">
+        ${btn.icon ? `<ha-icon icon="${btn.icon}"></ha-icon>` : `<span>${btn.label || ""}</span>`}
+      </button>`
+      )
+      .join("");
+  }
+
+  _handleControl(button) {
+    const index = parseInt(button.dataset.controlIndex, 10);
+    const btn = this._config.buttons?.[index];
+    if (!btn?.service) return;
+    const [domain, service] = btn.service.split(".", 2);
+    if (!domain || !service) return;
+    this._hass.callService(domain, service, btn.service_data || {});
+  }
+
+  _openHelp() {
+    const stateObj = this._hass.states[this._config.entity];
+    const attrs = stateObj?.attributes || {};
+    const title = this._config.title || attrs.mode_name || attrs.friendly_name || "Room mode";
+    this._helpDialogTitle.textContent = title;
+    this._helpDialogBody.innerHTML = this._parseDocumentation(this._config.documentation);
+    this._helpDialog.showModal();
+  }
+
+  _parseDocumentation(md) {
+    if (!md) return "";
+
+    const esc = (s) =>
+      s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+    const fig = (src, alt, size) => {
+      const style = size ? ` style="max-width:${size};width:fit-content"` : "";
+      return `<figure class="help-figure"${style}><img src="${src}" alt="${alt}" loading="lazy">${alt ? `<figcaption>${alt}</figcaption>` : ""}</figure>`;
+    };
+
+    const inline = (text) => {
+      let s = esc(text);
+      s = s.replace(/!\[([^\]]*)\]\((\S+?)(?:\s+=(\S+?))?\)/g, (_, alt, src, size) => fig(src, alt, size));
+      s = s.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+      s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+      s = s.replace(/(?<!\*)\*([^*]+)\*(?!\*)/g, "<em>$1</em>");
+      return s;
+    };
+
+    const parseBlocks = (text) => {
+      const blocks = text.split(/\n{2,}/);
+      let html = "";
+      for (const block of blocks) {
+        const trimmed = block.trim();
+        if (!trimmed) continue;
+
+        const headingMatch = trimmed.match(/^(#{1,3})\s+(.+)$/);
+        if (headingMatch) {
+          const level = headingMatch[1].length;
+          html += `<h${level}>${inline(headingMatch[2])}</h${level}>`;
+          continue;
+        }
+
+        const imgMatch = trimmed.match(/^!\[([^\]]*)\]\((\S+?)(?:\s+=(\S+?))?\)$/);
+        if (imgMatch) {
+          const alt = esc(imgMatch[1]);
+          html += fig(imgMatch[2], alt, imgMatch[3]);
+          continue;
+        }
+
+        const lines = trimmed.split("\n");
+        if (lines.every((l) => /^\s*[-*]\s/.test(l))) {
+          html += "<ul>";
+          for (const line of lines) {
+            html += `<li>${inline(line.replace(/^\s*[-*]\s+/, ""))}</li>`;
+          }
+          html += "</ul>";
+          continue;
+        }
+
+        html += `<p>${inline(trimmed.replace(/\n/g, "<br>"))}</p>`;
+      }
+      return html;
+    };
+
+    let html = "";
+    const parts = md.split(/\{columns\}|\{\/columns\}/);
+    for (let i = 0; i < parts.length; i++) {
+      if (i % 2 === 0) {
+        html += parseBlocks(parts[i]);
+      } else {
+        const inner = parts[i];
+        const imgRegex = /!\[([^\]]*)\]\((\S+?)(?:\s+=(\S+?))?\)/g;
+        const images = [];
+        let match;
+        while ((match = imgRegex.exec(inner)) !== null) images.push(match);
+        const textPart = inner.replace(/!\[([^\]]*)\]\((\S+?)(?:\s+=(\S+?))?\)/g, "").trim();
+        const leftHtml = parseBlocks(textPart);
+        let rightHtml = "";
+        for (const m of images) {
+          const alt = esc(m[1]);
+          rightHtml += fig(m[2], alt, m[3]);
+        }
+        html += `<div class="help-columns"><div class="help-columns-text">${leftHtml}</div><div class="help-columns-media">${rightHtml}</div></div>`;
+      }
+    }
+
+    return html;
   }
 
   _handleActionButton(button) {

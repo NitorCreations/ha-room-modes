@@ -19,7 +19,8 @@ Includes a companion Lovelace card (`room-mode-card`) for one-tap mode activatio
 
 1. Copy `custom_components/room_modes/` to your `config/custom_components/` directory
 2. Copy `custom_components/room_modes/room-mode-card.js` to your `config/www/` directory
-3. Restart Home Assistant
+3. Copy `custom_components/room_modes/tv-control-card.js` to your `config/www/` directory
+4. Restart Home Assistant
 
 ## Configuration
 
@@ -223,6 +224,106 @@ The card shows:
 - Step icons with individual status indicators
 - Expandable drawer with per-step detail and retry buttons
 - One-tap to run the entire mode
+
+### Documentation modal
+
+Add a `documentation` property with markdown content to show a help button (?) that opens a scrollable modal:
+
+```yaml
+type: custom:room-mode-card
+entity: sensor.room_mode_living_room_present
+title: Present
+documentation: |
+  ## Connect your laptop
+
+  Plug the **HDMI cable** into your laptop.
+
+  ![Cable photo](/local/docs/cables.jpg =50%)
+
+  - **Entire Screen** — mirrors your screen
+  - **Extended Display** — second screen
+```
+
+Supported markdown:
+- `#`, `##`, `###` headings
+- `**bold**` and `*italic*`
+- `![alt](url)` images — optional `=SIZE` suffix (e.g. `=50%`, `=300px`) sets `max-width`
+- `[text](url)` links
+- `- ` unordered lists
+- `{columns}` / `{/columns}` — text on the left, images on the right
+
+### Extra buttons
+
+Add custom action buttons to a card with the `buttons` property. Buttons appear next to the hero icon.
+
+```yaml
+type: custom:room-mode-card
+entity: sensor.room_mode_living_room_live_tv
+title: Live TV
+buttons:
+  - icon: mdi:chevron-up
+    label: "Channel +"
+    service: media_player.media_next_track
+    service_data:
+      entity_id: media_player.living_room_tv
+  - icon: mdi:chevron-down
+    label: "Channel -"
+    service: media_player.media_previous_track
+    service_data:
+      entity_id: media_player.living_room_tv
+```
+
+## TV Control Card
+
+The `tv-control-card` provides a TV off button and vertical volume sliders, designed to sit alongside the room mode cards.
+
+### Setup
+
+Add the card as a Lovelace resource:
+
+```yaml
+resources:
+  - url: /local/tv-control-card.js
+    type: module
+```
+
+### Usage
+
+```yaml
+type: custom:tv-control-card
+tv_off_entity: automation.turn_off_living_room_tv  # Optional
+tv_off_service: automation.trigger                  # Default
+tv_off_label: TV Off                                # Default
+section_columns: "5fr 1fr"                          # Optional, CSS grid columns
+sliders:
+  - entity: media_player.living_room_tv
+    label: TV Vol
+  - entity: media_player.living_room_speakers
+    label: Speakers
+```
+
+### Options
+
+| Option | Required | Default | Description |
+|--------|----------|---------|-------------|
+| `tv_off_entity` | No | `null` | Entity for the TV off button. Omit to hide the button. |
+| `tv_off_service` | No | `automation.trigger` | Service to call for TV off |
+| `tv_off_service_data` | No | `{skip_condition: true}` | Additional service data |
+| `tv_off_label` | No | `TV Off` | Button label |
+| `section_columns` | No | `5fr 1fr` | CSS grid template for the sections layout |
+| `sliders` | Yes | | Array of volume sliders (at least one) |
+
+Each slider entry:
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `entity` | Yes | Media player entity with `volume_level` attribute |
+| `label` | No | Slider label (default: "Volume") |
+
+The card automatically:
+- Matches its slider height to the sibling section (room mode cards grid)
+- Injects CSS to create an asymmetric two-column layout in HA sections views
+- Adapts slider width based on the number of sliders (1, 2, or 3)
 
 ## License
 
