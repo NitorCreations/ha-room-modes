@@ -1,5 +1,7 @@
 # Room Modes for Home Assistant
 
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=NitorCreations&repository=ha-room-modes&category=integration)
+
 A Home Assistant custom integration for orchestrating multi-step A/V and automation sequences. Define "room modes" that execute a series of steps with dependency tracking, parallel execution, verification, and retry logic.
 
 Includes a companion Lovelace card (`room-mode-card`) for one-tap mode activation with real-time step status feedback.
