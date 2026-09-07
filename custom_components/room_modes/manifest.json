@@ -1,7 +1,7 @@
 {
   "domain": "room_modes",
   "name": "Room Modes",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "documentation": "https://github.com/NitorCreations/ha-room-modes",
   "issue_tracker": "https://github.com/NitorCreations/ha-room-modes/issues",
   "requirements": [],

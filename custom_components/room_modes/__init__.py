@@ -80,6 +80,7 @@ VERIFY_SCHEMA = vol.Schema(
         vol.Optional("entity_id"): cv.string,
         vol.Optional("attribute"): cv.string,
         vol.Optional("value"): object,
+        vol.Optional("any_of"): vol.All(cv.ensure_list, [object]),
     }
 )
 
@@ -800,14 +801,27 @@ class RoomModeManager:
             return False
 
         verify_type = verify.get("type", VERIFY_TYPE_NONE)
-        expected_value = _render_template_value(verify.get("value"), context)
+
+        # "any_of" accepts a list of acceptable values; "value" keeps the
+        # original single-value behaviour. Devices are inconsistent about what
+        # they report - a webOS TV that is on may say "on", "idle" or "playing"
+        # depending on the running app, and its input labels may be "HDMI1" or
+        # "HDMI 1" depending on firmware - so a step often has more than one
+        # correct answer.
+        raw_any_of = verify.get("any_of")
+        if raw_any_of is not None:
+            expected_values = [
+                _render_template_value(item, context) for item in raw_any_of
+            ]
+        else:
+            expected_values = [_render_template_value(verify.get("value"), context)]
 
         if verify_type == VERIFY_TYPE_STATE:
-            return state.state == str(expected_value)
+            return state.state in [str(value) for value in expected_values]
 
         if verify_type == VERIFY_TYPE_ATTRIBUTE:
             attribute = verify.get("attribute")
-            return state.attributes.get(attribute) == expected_value
+            return state.attributes.get(attribute) in expected_values
 
         return True
 

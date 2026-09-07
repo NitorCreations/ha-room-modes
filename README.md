@@ -122,6 +122,33 @@ verify:
   value: HDMI1         # Expected attribute value
 ```
 
+Use `any_of` instead of `value` when more than one answer is correct:
+
+```yaml
+verify:
+  type: state
+  entity_id: media_player.my_tv
+  any_of: ["on", "idle", "playing", "paused"]
+```
+
+```yaml
+verify:
+  type: attribute
+  entity_id: media_player.my_tv
+  attribute: source
+  any_of: ["HDMI1", "HDMI 1"]
+```
+
+This matters more than it sounds. A webOS TV that is switched on reports `on`,
+`idle` or `playing` depending on the app that happens to be running, and its
+input labels appear as either `HDMI1` or `HDMI 1` depending on firmware and on
+whether someone has renamed the inputs. Verifying against a single literal makes
+a step fail whenever the device picks the other wording, and because a failed
+verification is retried for the full `timeout` on every attempt, one wrong
+literal turns into minutes of pointless retrying.
+
+`value` and `any_of` are mutually exclusive; `any_of` wins if both are given.
+
 If verification is omitted or `type: none`, the step succeeds immediately after the service call.
 
 ### Dependencies
